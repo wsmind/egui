@@ -438,7 +438,7 @@ impl Response {
         // but we do want tooltips while holding down on an item on a touch screen.
         if self
             .ctx
-            .input(|i| i.pointer.any_down() && i.pointer.has_moved_too_much_for_a_click)
+            .input(|i| i.pointer.any_down() /*&& i.pointer.is_dragging? */)
         {
             return false;
         }

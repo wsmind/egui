@@ -8,12 +8,6 @@ pub use crate::data::input::Key;
 pub use touch_state::MultiTouchInfo;
 use touch_state::TouchState;
 
-/// If the pointer moves more than this, it won't become a click (but it is still a drag)
-const MAX_CLICK_DIST: f32 = 6.0; // TODO(emilk): move to settings
-
-/// If the pointer is down for longer than this, it won't become a click (but it is still a drag)
-const MAX_CLICK_DURATION: f64 = 0.6; // TODO(emilk): move to settings
-
 /// The new pointer press must come within this many seconds from previous pointer release
 const MAX_DOUBLE_CLICK_DELAY: f64 = 0.3; // TODO(emilk): move to settings
 
@@ -533,10 +527,6 @@ pub struct PointerState {
     /// `None` if no mouse button is down.
     press_start_time: Option<f64>,
 
-    /// Set to `true` if the pointer has moved too much (since being pressed)
-    /// for it to be registered as a click.
-    pub(crate) has_moved_too_much_for_a_click: bool,
-
     /// When did the pointer get click last?
     /// Used to check for double-clicks.
     last_click_time: f64,
@@ -561,7 +551,6 @@ impl Default for PointerState {
             down: Default::default(),
             press_origin: None,
             press_start_time: None,
-            has_moved_too_much_for_a_click: false,
             last_click_time: std::f64::NEG_INFINITY,
             last_last_click_time: std::f64::NEG_INFINITY,
             pointer_events: vec![],
@@ -586,11 +575,6 @@ impl PointerState {
 
                     self.latest_pos = Some(pos);
                     self.interact_pos = Some(pos);
-
-                    if let Some(press_origin) = self.press_origin {
-                        self.has_moved_too_much_for_a_click |=
-                            press_origin.distance(pos) > MAX_CLICK_DIST;
-                    }
 
                     self.pointer_events.push(PointerEvent::Moved(pos));
                 }
@@ -617,7 +601,6 @@ impl PointerState {
                     if pressed {
                         self.press_origin = Some(pos);
                         self.press_start_time = Some(time);
-                        self.has_moved_too_much_for_a_click = false;
                         self.pointer_events.push(PointerEvent::Pressed {
                             position: pos,
                             button,
@@ -879,16 +862,6 @@ impl PointerState {
             return false;
         }
 
-        if self.has_moved_too_much_for_a_click {
-            return false;
-        }
-
-        if let Some(press_start_time) = self.press_start_time {
-            if self.time - press_start_time > MAX_CLICK_DURATION {
-                return false;
-            }
-        }
-
         true
     }
 
@@ -991,7 +964,6 @@ impl PointerState {
             down,
             press_origin,
             press_start_time,
-            has_moved_too_much_for_a_click,
             last_click_time,
             last_last_click_time,
             pointer_events,
@@ -1007,10 +979,6 @@ impl PointerState {
         ui.label(format!("down: {:#?}", down));
         ui.label(format!("press_origin: {:?}", press_origin));
         ui.label(format!("press_start_time: {:?} s", press_start_time));
-        ui.label(format!(
-            "has_moved_too_much_for_a_click: {}",
-            has_moved_too_much_for_a_click
-        ));
         ui.label(format!("last_click_time: {:#?}", last_click_time));
         ui.label(format!("last_last_click_time: {:#?}", last_last_click_time));
         ui.label(format!("pointer_events: {:?}", pointer_events));

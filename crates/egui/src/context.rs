@@ -727,13 +727,12 @@ impl Context {
                             response.dragged = false;
 
                             if hovered && response.is_pointer_button_down_on {
+                                if memory.interaction.click_id == Some(id) {
+                                    response.clicked[*button as usize] = true;
+                                }
                                 if let Some(click) = click {
-                                    let clicked = hovered && response.is_pointer_button_down_on;
-                                    response.clicked[*button as usize] = clicked;
-                                    response.double_clicked[*button as usize] =
-                                        clicked && click.is_double();
-                                    response.triple_clicked[*button as usize] =
-                                        clicked && click.is_triple();
+                                    response.double_clicked[*button as usize] = click.is_double();
+                                    response.triple_clicked[*button as usize] = click.is_triple();
                                 }
                             }
                         }
